@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: phishguard-api
+    env: docker
+    plan: free
+    dockerfilePath: backend/Dockerfile.api
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./phishguard.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ALLOW_ORIGINS
+        value: "*"
+  - type: web
+    name: phishguard-frontend
+    env: docker
+    plan: free
+    dockerfilePath: deploy/Dockerfile.frontend
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: phishguard-api
+          type: web
+          property: host
+  - type: worker
+    name: phishguard-updater
+    env: docker
+    plan: free
+    dockerfilePath: backend/Dockerfile.api
+    dockerCommand: python /app/workers/auto_update.py
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./phishguard.db
+      - key: AUTOUPDATE_INTERVAL_MIN
+        value: "360"
+      - key: FEED_OPENPHISH_URL
+        value: https://openphish.com/feed.txt
